@@ -29,7 +29,7 @@ var args = program.args;
 // var walletFile = program.file;
 // var walletRawFile = program.rawfile;
 
-if (program.file || program.rawFile) {
+if (!program.file && !program.rawFile) {
   program.help();
 }
 
