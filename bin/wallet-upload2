@@ -28,7 +28,7 @@ function moreKeysLeft() {
 }
 
 function uploadChunk(callback) {
-  var chunk = keys.slice(count, ADDRESS_LIMIT).map(function(key) {
+  var chunk = keys.slice(count, count + ADDRESS_LIMIT).map(function(key) {
     return key.address;
   });
   count += ADDRESS_LIMIT;
@@ -38,10 +38,9 @@ function uploadChunk(callback) {
 function uploadAddresses(addresses, callback) {
   var options = {
     url: DEFAULT_URL + '/wallet-api/wallets/' + walletId + '/addresses',
-    params: {
+    json: {
       addresses: addresses
-    },
-    json: true
+    }
   };
 
   request.post(options, function(err, res, body) {
