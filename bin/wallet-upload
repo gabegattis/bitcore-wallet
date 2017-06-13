@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+'use strict';
 
 var Readable = require('stream').Readable;
 var program = require('commander');
@@ -25,17 +26,35 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var walletFile = program.file || process.env.HOME + '/.wallet.dat';
-var walletRawFile = program.rawfile;
-var urlStr = program.url || 'http://127.0.0.1:3001';
-var walletJSON = JSON.parse(fs.readFileSync(walletFile));
-var walletRaw = JSON.parse(fs.readFileSync(walletRawFile));
-var walletId = walletJSON.walletId;
+// var walletFile = program.file;
+// var walletRawFile = program.rawfile;
 
-if (!walletId) {
-  console.error('Wallet ID not specified in the wallet file provided, aborting.');
-  process.exit(1);
+if (program.file || program.rawFile) {
+  program.help();
 }
+
+var walletJSON;
+var walletRawString;
+var walletRawJSON;
+
+if (program.file) {
+  walletJSON = require(program.file);
+}
+
+if (program.rawFile) {
+  walletRawString = fs.readFileSync(program.rawFile);
+  walletJSON = JSON.parse(fs.readFileSync(walletRawString));
+}
+
+var urlStr = program.url || 'http://127.0.0.1:3001';
+// var walletJSON = JSON.parse(fs.readFileSync(walletFile));
+// var walletRaw = JSON.parse(fs.readFileSync(walletRawFile));
+var walletId = walletJSON.walletId;
+//
+// if (!walletId) {
+//   console.error('Wallet ID not specified in the wallet file provided, aborting.');
+//   process.exit(1);
+// }
 
 function findAddress(line) {
   var re = /"address":\s+"(\w+)"/;
@@ -46,10 +65,10 @@ function findAddress(line) {
 }
 
 transform._transform = function(chunk, enc, callback) {
-  var data = chunk.toString()
+  var data = chunk.toString();
 
   if (this._last) {
-    data = this._last + data
+    data = this._last + data;
   }
 
   var lines = data.split('\n');
@@ -66,13 +85,13 @@ transform._flush = function (callback) {
   }
   this._last = null;
   callback();
-}
+};
 
 var addressReadStream = new Readable({ objectMode: true });
 var readCounter = 0;
 var counter = 0;
 addressReadStream._read = function() {
-  var address = walletRaw[readCounter];
+  var address = walletJSON[readCounter];
   var toPush = '';
   if (readCounter === 0) {
     toPush  = '[';
@@ -85,7 +104,7 @@ addressReadStream._read = function() {
   toPush = toPush + '"' + address + '"';
   readCounter++;
 
-  if (readCounter === walletRaw.length) {
+  if (readCounter === walletJSON.length) {
     toPush += ']';
   } else {
     toPush += ',';
@@ -94,7 +113,7 @@ addressReadStream._read = function() {
 };
 
 function upload(walletId, callback) {
-  var data = JSON.stringify(walletRaw);
+  var data = walletRawString;
   var CRLF = '\r\n';
   var formOptions = { header:
     CRLF + '--' + form.getBoundary() + CRLF +
