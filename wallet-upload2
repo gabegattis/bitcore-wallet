@@ -1,0 +1,52 @@
+#!/usr/bin/env node
+'use strict';
+
+var async = require('async');
+var request = require('request');
+
+var walletId = process.argv[2];
+var filePath = process.argv[3];
+var walletJSON = require(filePath);
+
+var DEFAULT_URL = 'http://127.0.0.1:3001';
+var ADDRESS_LIMIT = 1000;
+
+var walletId = walletJSON.walletId;
+var addresses = walletJSON.addresses;
+
+var count = 0;
+
+async.whilst(moreAddressesLeft, uploadChunk, function(err) {
+  if (err) {
+    console.log(err);
+  }
+});
+
+
+function moreAddressesLeft() {
+  return count < addresses.length;
+}
+
+function uploadChunk(callback) {
+  var chunk = addresses.slice(count, ADDRESS_LIMIT);
+  count += ADDRESS_LIMIT;
+  uploadAddresses(chunk, callback);
+}
+
+function uploadAddresses(addresses, callback) {
+  var options = {
+    url: DEFAULT_URL + '/wallet-api/wallets/' + walletId + '/addresses',
+    params: {
+      addresses: addresses
+    },
+    json: true
+  };
+
+  request.post(options, function(err, res, body) {
+    if (err) {
+      return callback(err);
+    }
+    console.log(body);
+    callback();
+  });
+}
