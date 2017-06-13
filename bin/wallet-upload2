@@ -12,23 +12,25 @@ var DEFAULT_URL = 'http://127.0.0.1:3001';
 var ADDRESS_LIMIT = 1000;
 
 var walletId = walletJSON.walletId;
-var addresses = walletJSON.addresses;
+var keys = walletJSON.keys;
 
 var count = 0;
 
-async.whilst(moreAddressesLeft, uploadChunk, function(err) {
+async.whilst(moreKeysLeft, uploadChunk, function(err) {
   if (err) {
     console.log(err);
   }
 });
 
 
-function moreAddressesLeft() {
-  return count < addresses.length;
+function moreKeysLeft() {
+  return count < keys.length;
 }
 
 function uploadChunk(callback) {
-  var chunk = addresses.slice(count, ADDRESS_LIMIT);
+  var chunk = keys.slice(count, ADDRESS_LIMIT).map(function(key) {
+    return key.address;
+  });
   count += ADDRESS_LIMIT;
   uploadAddresses(chunk, callback);
 }
