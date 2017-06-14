@@ -9,7 +9,7 @@ var filePath = process.argv[3];
 var walletJSON = require(filePath);
 
 var DEFAULT_URL = 'http://127.0.0.1:3001';
-var ADDRESS_LIMIT = 1000;
+var ADDRESS_LIMIT = 5000;
 
 var walletId = walletJSON.walletId;
 var keys = walletJSON.keys;
@@ -24,6 +24,7 @@ async.whilst(moreKeysLeft, uploadChunk, function(err) {
 
 
 function moreKeysLeft() {
+  console.log(count,'/',keys.length);
   return count < keys.length;
 }
 
