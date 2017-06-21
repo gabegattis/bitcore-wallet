@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+'use strict';
 
 var _ = require('lodash');
 var program = require('commander');
@@ -37,8 +38,9 @@ function getKeys(walletJSON) {
   var keys = {};
   walletJSON.keys.forEach(function(record) {
     var key = {};
-    keys[record.pubKey] = record.address;
-    keys[Hash.sha256ripemd160(new Buffer(record.pubKey, 'hex')).toString('hex')] = record.address;
+    //keys[record.pubKey] = record.address;
+    //keys[Hash.sha256ripemd160(new Buffer(record.pubKey, 'hex')).toString('hex')] = record.address;
+    keys[record.address] = record.address;
   });
   return keys;
 }
@@ -66,7 +68,6 @@ function getTransactionList(walletId, dateRange) {
     params: { start: dateRange[0], end: dateRange[1] },
     body: ''
   };
-
   var error;
   var req = (isTLS(parsedUrl) ? https : http).request(httpOptions, function(res) {
 
@@ -192,7 +193,7 @@ function isJoin(transaction) {
 
 function labelTransactions(transaction) {
 
-  var inputResults = aggregate(transaction.inputs, true);
+  var inputResults = aggregate(transaction.inputs);
   var outputResults = aggregate(transaction.outputs);
 
   transaction.inputs = inputResults.results;
@@ -204,32 +205,19 @@ function labelTransactions(transaction) {
   transaction.allMine = inputResults.allMine && outputResults.allMine;
 }
 
-function aggregate(records, input) {
+function aggregate(records) {
 
   var txAmount = 0;
   var amount = 0;
   var allMine = true;
 
   var results = records.map(function(record) {
-
-    var pubKeyOrHash = getPubKeyOrHash(record.script);
-    var temporalAmount = (record.inputSatoshis || record.satoshis);
-
-    record.address = keys[pubKeyOrHash];
-
-    txAmount += temporalAmount;
-
-    record.wallet = false;
-    if (record.address) {
-      amount += temporalAmount;
-      record.wallet = true;
-    } else {
-      //for inputs (we are sending money from our wallet to external address)
-      if (input && pubKeyOrHash) {
-        record.address = getAddressFromPubKeyOrHash(pubKeyOrHash);
-      }
+    record.wallet = keys[record.address];
+    if (!record.wallet) {
       allMine = false;
     }
+    amount = record.satoshis;
+    txAmount += record.satoshis;
     return record;
   });
 
@@ -289,9 +277,9 @@ function transactionToList(transaction) {
   }
 
   transaction.inputs.forEach(function(input) {
-    if (!(input.inputSatoshis >= 0)) {
+    if (input.satoshis < 0) {
       print(transaction);
-      throw 'input satoshis not provided on one or more of the inputs, therefore we do not have enough information to build the report.';
+      throw new Error('input satoshis not provided on one or more of the inputs, therefore we do not have enough information to build the report.');
     }
   });
 
@@ -358,7 +346,9 @@ function transactionToList(transaction) {
 
 function print(line) {
   resultsPrinted = true;
-  if (typeof line == 'undefined') return;
+  if (typeof line === 'undefined') {
+    return;
+  }
   process.stdout.write(JSON.stringify(line) + '\n');
 }
 
