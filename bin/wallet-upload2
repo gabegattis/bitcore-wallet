@@ -16,17 +16,17 @@ var keys = walletJSON.keys;
 
 var count = 0;
 
-async.whilst(moreKeysLeft, uploadChunk, function(err) {
-  if (err) {
-    console.log(err);
-  }
-});
-
-
-function moreKeysLeft() {
-  console.log(count,'/',keys.length);
-  return count < keys.length;
-}
+// async.whilst(moreKeysLeft, uploadChunk, function(err) {
+//   if (err) {
+//     console.log(err);
+//   }
+// });
+//
+//
+// function moreKeysLeft() {
+//   console.log(count,'/',keys.length);
+//   return count < keys.length;
+// }
 
 function uploadChunk(callback) {
   var chunk = keys.slice(count, count + ADDRESS_LIMIT).map(function(key) {
@@ -48,7 +48,23 @@ function uploadAddresses(addresses, callback) {
     if (err) {
       return callback(err);
     }
+    console.log(res.statusCode);
     console.log(body);
     callback();
   });
 }
+
+var times = keys.length / ADDRESS_LIMIT;
+var remainder = keys.length % ADDRESS_LIMIT;
+if (remainder > 0) {
+  times += 1;
+}
+async.timesLimit(times, 1, function(n, callback) {
+  uploadChunk(callback);
+}, function(err) {
+  if (err) {
+    console.log(err);
+  }
+
+  //
+});
