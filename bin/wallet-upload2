@@ -4,31 +4,23 @@
 var async = require('async');
 var request = require('request');
 
-var walletId = process.argv[2];
-var filePath = process.argv[3];
+var filePath = process.argv[2];
+var skip = parseInt(process.argv[3]);
 var walletJSON = require(filePath);
 
 var DEFAULT_URL = 'http://127.0.0.1:3001';
-var ADDRESS_LIMIT = 2000;
+var ADDRESS_LIMIT = 1000;
 
 var walletId = walletJSON.walletId;
 var keys = walletJSON.keys;
+if (!isNaN(skip)) {
+  keys = keys.slice(skip);
+}
 
 var count = 0;
 
-// async.whilst(moreKeysLeft, uploadChunk, function(err) {
-//   if (err) {
-//     console.log(err);
-//   }
-// });
-//
-//
-// function moreKeysLeft() {
-//   console.log(count,'/',keys.length);
-//   return count < keys.length;
-// }
-
 function uploadChunk(callback) {
+  console.log('uploading addresses', count, '/', keys.length);
   var chunk = keys.slice(count, count + ADDRESS_LIMIT).map(function(key) {
     return key.address;
   });
@@ -48,8 +40,7 @@ function uploadAddresses(addresses, callback) {
     if (err) {
       return callback(err);
     }
-    console.log(res.statusCode);
-    console.log(body);
+
     callback();
   });
 }
